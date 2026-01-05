@@ -1,34 +1,51 @@
 <?php
-// index.php (Front Controller)
+// ==========================
+// Front Controller
+// ==========================
 
-// Affichage des erreurs (dev only)
+// Dev mode (disable in production)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Autoload PSR-4 simple (sans Composer)
+// ==========================
+// PSR-4 Autoload
+// ==========================
 spl_autoload_register(function ($class) {
-    $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-    $path = __DIR__ . '/' . $class . '.php';
-
-    if (file_exists($path)) {
-        require_once $path;
+    $file = __DIR__ . '/' . str_replace('\\', '/', $class) . '.php';
+    if (file_exists($file)) {
+        require_once $file;
     }
 });
 
-// Routing simple via URL
-$controller = $_GET['controller'] ?? 'home';
-$action     = $_GET['action'] ?? 'index';
+// ==========================
+// Simple Routing
+// ==========================
+$controllerName = $_GET['controller'] ?? 'home';
+$actionName     = $_GET['action'] ?? 'index';
 
-$controllerClass = 'Controller\\' . ucfirst($controller) . 'Controller';
+$controllerClass = 'Controller\\' . ucfirst($controllerName) . 'Controller';
 
+// ==========================
+// Controller check
+// ==========================
 if (!class_exists($controllerClass)) {
-    die("Controller not found");
+    http_response_code(404);
+    require_once __DIR__ . '/View/error/404.php';
+    exit;
 }
 
-$controllerObject = new $controllerClass();
+$controller = new $controllerClass();
 
-if (!method_exists($controllerObject, $action)) {
-    die("Action not found");
+// ==========================
+// Action check
+// ==========================
+if (!method_exists($controller, $actionName)) {
+    http_response_code(404);
+    require_once __DIR__ . '/View/error/404.php';
+    exit;
 }
 
-$controllerObject->$action();
+// ==========================
+// Call action
+// ==========================
+$controller->$actionName();
